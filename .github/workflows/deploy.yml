@@ -13,11 +13,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
       - name: Build Docker Image
         run: |
           docker build -t simple-nginx-app-cicd .
 
+      - name: Run Nginx Locally (for Testing)
+        run: |
+          docker run -d -p 8080:80 simple-nginx-app-cicd
+          echo "App is running at http://localhost:8080"
+
       - name: Verify Nginx is Running
         run: |
           curl --fail http://localhost:8080 || exit 1
-
