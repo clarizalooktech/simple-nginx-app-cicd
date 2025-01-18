@@ -11,6 +11,7 @@ jobs:
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+      HOME_IP: ${{ secrets.HOME_IP }}
 
     steps:
       - name: Checkout Code
