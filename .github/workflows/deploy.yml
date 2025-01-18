@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-docker:
+  build-docker-setup-terraform:
     runs-on: ubuntu-latest
 
     env:
@@ -42,11 +42,18 @@ jobs:
 
       - name: Initialize Terraform
         working-directory: ./infra
-        run: terraform init
+        run: |
+          set -x
+          terraform init
 
       - name: Apply Terraform
         working-directory: ./infra
-        run: terraform apply -auto-approve
+        id: apply
+        env:
+          TF_VAR_home_ip: ${{ env.HOME_IP }}
+        run: |
+          set -x
+          terraform apply -auto-approve
 
       - name: Get EC2 Instance Public IP
         id: output
@@ -55,7 +62,7 @@ jobs:
 
 
   deploy:
-    needs: build-docker
+    needs: build-docker-setup-terraform
     runs-on: ubuntu-latest
 
     env:
@@ -65,9 +72,15 @@ jobs:
         - name: Install SSH Client
           run: sudo apt-get install -y openssh-client
 
+        - name: Add SSH Key
+          run: |
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+  
         - name: SSH into EC2 and Deploy Docker Image
           run: |
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.output.outputs.instance_ip }} << 'EOF'
+            set -x
             aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
             docker pull $REPOSITORY_URI:latest
             docker run -d -p 80:80 $REPOSITORY_URI:latest
