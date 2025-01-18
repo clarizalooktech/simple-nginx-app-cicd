@@ -27,4 +27,5 @@ jobs:
 
       - name: Verify Nginx is Running
         run: |
+          sleep 10  # Add a short delay before checking
           curl --fail http://localhost:8080 || exit 1
