@@ -66,22 +66,27 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-        REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+      REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
 
     steps:
-        - name: Install SSH Client
-          run: sudo apt-get install -y openssh-client
+      - name: Install SSH Client
+        run: sudo apt-get install -y openssh-client
 
-        - name: Add SSH Key
-          run: |
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
+      - name: Create .ssh Directory
+        run: mkdir -p ~/.ssh
+
+      - name: Add SSH Key
+        run: |
+          set -x
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
   
-        - name: SSH into EC2 and Deploy Docker Image
-          run: |
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.output.outputs.instance_ip }} << 'EOF'
-            set -x
-            aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
-            docker pull $REPOSITORY_URI:latest
-            docker run -d -p 80:80 $REPOSITORY_URI:latest
-            EOF
+      - name: SSH into EC2 and Deploy Docker Image
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.output.outputs.instance_ip }} << 'EOF'
+          set -x
+          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
+          docker pull $REPOSITORY_URI:latest
+          docker run -d -p 80:80 $REPOSITORY_URI:latest
+          EOF
