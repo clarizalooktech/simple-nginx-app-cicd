@@ -15,7 +15,7 @@ resource "aws_security_group" "allow_ssh" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["${var.home_ip}/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -34,7 +34,7 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
   tags = {
-    Name = "AppServer"
+    Name = "NginxAppServer"
   }
 
   user_data = <<-EOF
