@@ -31,24 +31,43 @@ jobs:
         run: |
           IMAGE_TAG=latest
 
-          docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-          docker push $REPOSITORY_URI:$IMAGE_TAG
+  #        docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+  #        docker push $REPOSITORY_URI:$IMAGE_TAG
 
-  # deploy:
-  #   needs: build-docker
-  #   runs-on: ubuntu-latest
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
 
-  #   env:
-  #     REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}  
-      
-  #   steps:
-  #     - name: Install SSH Client
-  #       run: sudo apt-get install -y openssh-client
+      - name: Initialize Terraform
+        working-directory: ./infra
+        run: terraform init
 
-  #     - name: SSH into EC2 and Deploy Docker Image
-  #       run: |
-  #         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@<EC2_INSTANCE_PUBLIC_IP> << 'EOF'
-  #         aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
-  #         docker pull $REPOSITORY_URI:latest
-  #         docker run -d -p 80:80 $REPOSITORY_URI:latest
-  #         EOF
+      - name: Apply Terraform
+        working-directory: ./infra
+        run: terraform apply -auto-approve
+
+      - name: Get EC2 Instance Public IP
+        id: output
+        working-directory: ./infra
+        run: echo "::set-output name=instance_ip::$(terraform output -raw instance_public_ip)"
+
+
+  deploy:
+    needs: build-docker
+    runs-on: ubuntu-latest
+
+    env:
+        REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+
+    steps:
+        - name: Install SSH Client
+          run: sudo apt-get install -y openssh-client
+
+        - name: SSH into EC2 and Deploy Docker Image
+          run: |
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.output.outputs.instance_ip }} << 'EOF'
+            aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
+            docker pull $REPOSITORY_URI:latest
+            docker run -d -p 80:80 $REPOSITORY_URI:latest
+            EOF
