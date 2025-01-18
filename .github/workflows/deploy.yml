@@ -32,7 +32,7 @@ jobs:
           IMAGE_TAG=latest
 
           docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-  #        docker push $REPOSITORY_URI:$IMAGE_TAG
+          docker push $REPOSITORY_URI:$IMAGE_TAG
 
   # deploy:
   #   needs: build-docker
