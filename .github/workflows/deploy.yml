@@ -15,9 +15,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t my-nginx-app .
+          docker build -t simple-nginx-app-cicd .
 
-      - name: Run Nginx Locally (for Testing)
+      - name: Verify Nginx is Running
         run: |
-          docker run -d -p 8080:80 my-nginx-app
-          echo "App is running at http://localhost:8080"
+          curl --fail http://localhost:8080 || exit 1
+
