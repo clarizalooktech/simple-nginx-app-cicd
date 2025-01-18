@@ -6,8 +6,11 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-docker:
     runs-on: ubuntu-latest
+
+    env:
+      REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
 
     steps:
       - name: Checkout Code
@@ -26,16 +29,18 @@ jobs:
 
       - name: Build, Tag, and Push Docker Image
         run: |
-          REPOSITORY_URI=<your_ecr_repository_uri>  # Replace with your ECR repository URI
           IMAGE_TAG=latest
 
           docker build -t $REPOSITORY_URI:$IMAGE_TAG .
   #        docker push $REPOSITORY_URI:$IMAGE_TAG
 
   # deploy:
-  #   needs: build-and-deploy
+  #   needs: build-docker
   #   runs-on: ubuntu-latest
 
+  #   env:
+  #     REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}  
+      
   #   steps:
   #     - name: Install SSH Client
   #       run: sudo apt-get install -y openssh-client
@@ -43,7 +48,7 @@ jobs:
   #     - name: SSH into EC2 and Deploy Docker Image
   #       run: |
   #         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@<EC2_INSTANCE_PUBLIC_IP> << 'EOF'
-  #         aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ecr_repository_uri>
-  #         docker pull <ecr_repository_uri>:latest
-  #         docker run -d -p 80:80 <_ecr_repository_uri>:latest
+  #         aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
+  #         docker pull $REPOSITORY_URI:latest
+  #         docker run -d -p 80:80 $REPOSITORY_URI:latest
   #         EOF
