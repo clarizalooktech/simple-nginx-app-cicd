@@ -77,15 +77,16 @@ jobs:
 
       - name: Add SSH Key
         run: |
-          set -x
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-  
+      - name: Add SSH Host Key (Optional, if required)
+        run: |
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
       - name: SSH into EC2 and Deploy Docker Image
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.output.outputs.instance_ip }} << 'EOF'
-          set -x
+          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.instance_ip.outputs.instance_ip }} << 'EOF'
           aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
           docker pull $REPOSITORY_URI:latest
           docker run -d -p 80:80 $REPOSITORY_URI:latest
