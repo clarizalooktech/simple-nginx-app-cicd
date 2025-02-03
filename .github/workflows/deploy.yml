@@ -31,10 +31,10 @@ jobs:
       - name: Build, Tag, and Push Docker Image
         run: |
           echo "Building Docker Image"
-          # set -x
-          # IMAGE_TAG=latest
-          # docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-          # docker push $REPOSITORY_URI:$IMAGE_TAG
+  #        set -x
+  #        IMAGE_TAG=latest
+  #        docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+  #        docker push $REPOSITORY_URI:$IMAGE_TAG
 
       - name: Set up Python
         uses: actions/setup-python@v2
