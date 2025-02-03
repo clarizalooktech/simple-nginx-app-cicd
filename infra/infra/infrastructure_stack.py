@@ -27,5 +27,5 @@ class NginxCicdStack(Stack):
             machine_image=ec2.MachineImage.latest_amazon_linux2(),
             vpc=vpc,
             security_group=security_group,
-            keyPair="rsakey"
+            key_name="rsakey"
         )
