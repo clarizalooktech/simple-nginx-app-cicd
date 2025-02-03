@@ -6,6 +6,11 @@ import aws_cdk as cdk
 from infra.infrastructure_stack import NginxCicdStack
 
 app = cdk.App()
-NginxCicdStack(app, "nginx-cicd-stack")
+
+# Specify the environment (account and region)
+env = cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), 
+    region=os.getenv('CDK_DEFAULT_REGION'))
+
+NginxCicdStack(app, "nginx-cicd-stack", env=env)
 
 app.synth()
