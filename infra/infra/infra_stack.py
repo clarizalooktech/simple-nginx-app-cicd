@@ -23,7 +23,7 @@ class InfraStack(Stack):
         # Define the EC2 instance
         ec2_instance = ec2.Instance(self, "Instance",
             instance_type=ec2.InstanceType("t2.micro"),
-            machine_image=ec2.MachineImage.latest_amazon_linux(),
+            machine_image=ec2.MachineImage.latest_amazon_linux2(),
             vpc=vpc,
             security_group=security_group,
             key_name="rsakey"
