@@ -6,12 +6,11 @@ on:
       - main
 
 jobs:
-  build-docker-setup-terraform:
+  build-docker-setup-infra:
     runs-on: ubuntu-latest
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-      HOME_IP: ${{ secrets.HOME_IP }}
 
     steps:
       - name: Checkout Code
@@ -30,64 +29,28 @@ jobs:
 
       - name: Build, Tag, and Push Docker Image
         run: |
+          set -x
           IMAGE_TAG=latest
+          docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+          docker push $REPOSITORY_URI:$IMAGE_TAG
 
-  #        docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-  #        docker push $REPOSITORY_URI:$IMAGE_TAG
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          terraform_version: 1.0.0
+          python-version: '3.8'
 
-      - name: Initialize Terraform
-        working-directory: ./infra
+      - name: Install dependencies
         run: |
-          set -x
-          terraform init
+          python -m pip install --upgrade pip
+          pip install -r infra/requirements.txt
 
-      - name: Apply Terraform
+      - name: Deploy CDK Stack
         working-directory: ./infra
-        id: apply
-        env:
-          TF_VAR_home_ip: ${{ env.HOME_IP }}
-        run: |
-          set -x
-          terraform apply -auto-approve
+        run: cdk deploy --require-approval never
 
       - name: Get EC2 Instance Public IP
         id: output
-        working-directory: ./infra
-        run: echo "::set-output name=instance_ip::$(terraform output -raw instance_public_ip)"
-
-
-  deploy:
-    needs: build-docker-setup-terraform
-    runs-on: ubuntu-latest
-
-    env:
-      REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-
-    steps:
-      - name: Install SSH Client
-        run: sudo apt-get install -y openssh-client
-
-      - name: Create .ssh Directory
-        run: mkdir -p ~/.ssh
-
-      - name: Add SSH Key
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      - name: Add SSH Host Key (Optional, if required)
-        run: |
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-
-      - name: SSH into EC2 and Deploy Docker Image
-        run: |
-          ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.instance_ip.outputs.instance_ip }} << 'EOF'
-          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
-          docker pull $REPOSITORY_URI:latest
-          docker run -d -p 80:80 $REPOSITORY_URI:latest
-          EOF
+          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyVpc/Instance" --query "Reservations[*].Instances[*].InstanceId" --output text)
+          INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+          echo "::set-output name=instance_ip::$INSTANCE_IP"

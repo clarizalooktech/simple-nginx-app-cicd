@@ -1,4 +1,4 @@
-# My Nginx App
+# Nginx App With CICD
 
 This is a simple web application served by an Nginx server.
 
@@ -6,7 +6,7 @@ This is a simple web application served by an Nginx server.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/zzzzzz/ccc-nginx-app.git
+   git clone https://github.com/[repo]/nginx-app.git
    cd simple-nginx-app-cicd
 2. Rebuild and Restart
     After confirming the Dockerfile and nginx.conf, rebuild the image and run the container:
