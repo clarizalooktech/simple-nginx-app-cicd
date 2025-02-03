@@ -11,6 +11,9 @@ jobs:
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+      HOME_IP: ${{ secrets.HOME_IP }}
+      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }} 
+      CDK_DEFAULT_REGION: ap-southeast-2
 
     steps:
       - name: Checkout Code
@@ -27,13 +30,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, Tag, and Push Docker Image
-        run: |
-          echo 'Building Docker Image...'
-#          set -x
-#          IMAGE_TAG=latest
-#          docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-#          docker push $REPOSITORY_URI:$IMAGE_TAG
+      # - name: Build, Tag, and Push Docker Image
+      #   run: |
+      #     set -x
+      #     IMAGE_TAG=latest
+      #     docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+      #     docker push $REPOSITORY_URI:$IMAGE_TAG
 
       - name: Set up Python
         uses: actions/setup-python@v2
