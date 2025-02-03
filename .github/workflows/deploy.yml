@@ -3,7 +3,7 @@ name: Deploy Nginx App
 on:
   push:
     branches:
-      - main
+      - feature/build-cicd-pipeline
 
 jobs:
   build-docker-setup-infra:
@@ -11,6 +11,7 @@ jobs:
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+      HOME_IP: ${{ secrets.HOME_IP }}
 
     steps:
       - name: Checkout Code
@@ -29,10 +30,11 @@ jobs:
 
       - name: Build, Tag, and Push Docker Image
         run: |
-          set -x
-          IMAGE_TAG=latest
-          docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-          docker push $REPOSITORY_URI:$IMAGE_TAG
+          echo "Building Docker Image"
+          # set -x
+          # IMAGE_TAG=latest
+          # docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+          # docker push $REPOSITORY_URI:$IMAGE_TAG
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -44,6 +46,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r infra/requirements.txt
 
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
       - name: Deploy CDK Stack
         working-directory: ./infra
         run: cdk deploy --require-approval never
@@ -54,3 +59,33 @@ jobs:
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyVpc/Instance" --query "Reservations[*].Instances[*].InstanceId" --output text)
           INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
           echo "::set-output name=instance_ip::$INSTANCE_IP"
+
+  deploy:
+    needs: build-docker-setup-infra
+    runs-on: ubuntu-latest
+
+    env:
+      REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+
+    steps:
+      - name: Install SSH Client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Create .ssh Directory
+        run: mkdir -p ~/.ssh
+
+      - name: Add SSH Key
+        run: |
+          set -x
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: SSH into EC2 and Deploy Docker Image
+        run: |
+          set -x
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ steps.output.outputs.instance_ip }} << 'EOF'
+          set -x
+          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
+          docker pull $REPOSITORY_URI:latest
+          docker run -d -p 80:80 $REPOSITORY_URI:latest
+          EOF
