@@ -26,8 +26,8 @@ class NginxCicdStack(Stack):
             machine_image=ec2.MachineImage.latest_amazon_linux2(),
             vpc=vpc,
             security_group=security_group,
-            key_name="rsakey"
+            key_pair=ec2.KeyPair.from_key_pair_name(self, "InstanceKeyPair", "rsakey")
         )
 
         # Add a Name Tag to EC2 instance
-        ec2.CfnTag.add(ec2_instance.node.default_child, "Name", "NginxInstance")
+        ec2_instance.add_property_override("Tags", [{"Key": "Name", "Value": "NginxInstance"}])
