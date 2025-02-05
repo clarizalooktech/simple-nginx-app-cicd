@@ -11,6 +11,7 @@ jobs:
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+      HOME_IP: ${{ secrets.HOME_IP }}
       CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }} 
       CDK_DEFAULT_REGION: ap-southeast-2
 
@@ -29,12 +30,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # - name: Build, Tag, and Push Docker Image
-      #   run: |
-      #     set -x
-      #     IMAGE_TAG=latest
-      #     docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-      #     docker push $REPOSITORY_URI:$IMAGE_TAG
+      - name: Build, Tag, and Push Docker Image
+        run: |
+          set -x
+          IMAGE_TAG=latest
+          docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+          docker push $REPOSITORY_URI:$IMAGE_TAG
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -54,6 +55,7 @@ jobs:
         run: cdk deploy --require-approval never
 
       - name: Wait for EC2 Instance to be Ready
+        id: wait-for-instance
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=NginxInstance" --query "Reservations[0].Instances[0].InstanceId" --output text)
           
@@ -65,7 +67,7 @@ jobs:
           done
           
           echo "Instance IP: $INSTANCE_IP"
-          echo "INSTANCE_IP=$INSTANCE_IP" >> $GITHUB_ENV
+          echo "::set-output name=instance_ip::$INSTANCE_IP"
 
   deploy:
     needs: build-docker-setup-infra
@@ -90,7 +92,7 @@ jobs:
       - name: SSH into EC2 and Deploy Docker Image
         run: |
           set -x
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ env.INSTANCE_IP }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ needs.build-docker-setup-infra.outputs.instance_ip }} << 'EOF'
           set -x
           aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
           docker pull $REPOSITORY_URI:latest
