@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
+    aws_cdk as cdk  # Add this for tagging
 )
 from constructs import Construct
 
@@ -9,7 +10,7 @@ class NginxCicdStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-         # Use the default VPC
+        # Use the default VPC
         vpc = ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True)
 
         # Define the security group
@@ -29,3 +30,6 @@ class NginxCicdStack(Stack):
             security_group=security_group,
             key_name="rsakey"
         )
+
+        # Add a Name tag to the EC2 instance
+        cdk.Tags.of(ec2_instance).add("Name", "NginxInstance")
