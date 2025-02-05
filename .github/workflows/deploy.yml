@@ -11,7 +11,6 @@ jobs:
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-      HOME_IP: ${{ secrets.HOME_IP }}
       CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }} 
       CDK_DEFAULT_REGION: ap-southeast-2
 
@@ -56,13 +55,17 @@ jobs:
 
       - name: Wait for EC2 Instance to be Ready
         run: |
-          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=MyVpc/Instance" --query "Reservations[*].Instances[*].InstanceId" --output text)
-          while [ -z "$INSTANCE_IP" ]; do
+          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=default-vpc" --query "Reservations[0].Instances[0].InstanceId" --output text)
+          
+          INSTANCE_IP=""
+          while [ -z "$INSTANCE_IP" ] || [ "$INSTANCE_IP" == "None" ]; do
             echo "Waiting for instance to be ready..."
             sleep 10
-            INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+            INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
           done
-          echo "::set-output name=instance_ip::$INSTANCE_IP"
+          
+          echo "Instance IP: $INSTANCE_IP"
+          echo "INSTANCE_IP=$INSTANCE_IP" >> $GITHUB_ENV
 
   deploy:
     needs: build-docker-setup-infra
@@ -87,7 +90,7 @@ jobs:
       - name: SSH into EC2 and Deploy Docker Image
         run: |
           set -x
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ needs.build-docker-setup-infra.outputs.instance_ip }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ env.INSTANCE_IP }} << 'EOF'
           set -x
           aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
           docker pull $REPOSITORY_URI:latest
