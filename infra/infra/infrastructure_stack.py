@@ -1,7 +1,6 @@
 from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
-    aws_cdk as cdk  # Add this for tagging
 )
 from constructs import Construct
 
@@ -16,20 +15,19 @@ class NginxCicdStack(Stack):
         # Define the security group
         security_group = ec2.SecurityGroup(self, "SecurityGroup",
             vpc=vpc,
-            description="Allow ssh access from the world",
+            description="Allow SSH access from anywhere",
             allow_all_outbound=True
         )
-        security_group.add_ingress_rule(ec2.Peer.ipv4("0.0.0.0/0"), 
-            ec2.Port.tcp(22), "Allow SSH access")
+        security_group.add_ingress_rule(ec2.Peer.ipv4("0.0.0.0/0"), ec2.Port.tcp(22), "Allow SSH access")
 
         # Define the EC2 instance
         ec2_instance = ec2.Instance(self, "Instance",
-            instance_type=ec2.InstanceType("t2.micro"),  # Free Tier eligible instance type
+            instance_type=ec2.InstanceType("t2.micro"),  
             machine_image=ec2.MachineImage.latest_amazon_linux2(),
             vpc=vpc,
             security_group=security_group,
             key_name="rsakey"
         )
 
-        # Add a Name tag to the EC2 instance
-        cdk.Tags.of(ec2_instance).add("Name", "NginxInstance")
+        # Add a Name Tag to EC2 instance
+        ec2.CfnTag.add(ec2_instance.node.default_child, "Name", "NginxInstance")
