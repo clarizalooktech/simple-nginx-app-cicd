@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
+    Tags
 )
 from constructs import Construct
 
@@ -26,8 +27,8 @@ class NginxCicdStack(Stack):
             machine_image=ec2.MachineImage.latest_amazon_linux2(),
             vpc=vpc,
             security_group=security_group,
-            key_pair=ec2.KeyPair.from_key_pair_name(self, "InstanceKeyPair", "rsakey")
+            key_name="rsakey"  # Replace with your key pair name
         )
 
         # Add a Name Tag to EC2 instance
-        ec2_instance.add_property_override("Tags", [{"Key": "Name", "Value": "NginxInstance"}])
+        Tags.of(ec2_instance).add("Name", "NginxInstance")
