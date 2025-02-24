@@ -19,6 +19,6 @@ This is a simple web application served by an Nginx server.
     
 
 ### Screenshots
-![Build Docker setup1](assets/build-docker-setup-infra-step1.png)
+![Build Docker setup1](assets/build-docker-setup-infra-step1.jpg)
 
-![Build Docker setup2](assets/build-docker-setup-infra-step2.png)
+![Build Docker setup2](assets/build-docker-setup-infra-step2.jpg)

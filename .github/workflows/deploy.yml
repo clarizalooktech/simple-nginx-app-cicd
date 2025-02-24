@@ -59,14 +59,6 @@ jobs:
         id: wait-for-instance
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=NginxInstance" --query "Reservations[0].Instances[0].InstanceId" --output text)
-          
-          INSTANCE_IP=""
-          while [ -z "$INSTANCE_IP" ] || [ "$INSTANCE_IP" == "None" ]; do
-            echo "Waiting for instance to be ready..."
-            sleep 10
-            INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
-          done
-          
           echo "Instance IP: $INSTANCE_IP"
           echo "instance_ip=$INSTANCE_IP" >> $GITHUB_OUTPUT  # Updated to use GITHUB_OUTPUT
 
