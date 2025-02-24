@@ -9,7 +9,7 @@ jobs:
   build-docker-setup-infra:
     runs-on: ubuntu-latest
     outputs:
-      instance_ip: ${{ steps.wait-for-instance.outputs.instance_ip }}  # Properly define the output
+      instance_ip: ${{ steps.wait-for-instance.outputs.instance_ip }}
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
