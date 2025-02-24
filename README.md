@@ -17,3 +17,8 @@ This is a simple web application served by an Nginx server.
 
     [http://localhost:8080](http://localhost:8080)
     
+
+### Screenshots
+![Build Docker setup1](assets/build-docker-setup-infra-step1.png)
+
+![Build Docker setup2](assets/build-docker-setup-infra-step2.png)
