@@ -43,13 +43,16 @@ class NginxCicdStack(Stack):
             role=instance_role  # Assign the role with ECR permissions
         )
         
-        # Add user data to install Docker
+        # Add user data to install Docker and Nginx
         ec2_instance.add_user_data(
             "yum update -y",
             "amazon-linux-extras install docker -y",
             "service docker start",
             "usermod -a -G docker ec2-user",
-            "systemctl enable docker"
+            "systemctl enable docker",
+            "amazon-linux-extras install nginx1.12 -y",
+            "systemctl start nginx",
+            "systemctl enable nginx"
         )
 
         # Add a Name Tag to EC2 instance
