@@ -8,10 +8,11 @@ on:
 jobs:
   build-docker-setup-infra:
     runs-on: ubuntu-latest
+    outputs:
+      instance_ip: ${{ steps.wait-for-instance.outputs.instance_ip }}  # Properly define the output
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-      HOME_IP: ${{ secrets.HOME_IP }}
       CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }} 
       CDK_DEFAULT_REGION: ap-southeast-2
 
@@ -67,7 +68,7 @@ jobs:
           done
           
           echo "Instance IP: $INSTANCE_IP"
-          echo "::set-output name=instance_ip::$INSTANCE_IP"
+          echo "instance_ip=$INSTANCE_IP" >> $GITHUB_OUTPUT  # Updated to use GITHUB_OUTPUT
 
   deploy:
     needs: build-docker-setup-infra
@@ -77,6 +78,9 @@ jobs:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
 
     steps:
+      - name: Debug Output IP
+        run: echo "Using IP address: ${{ needs.build-docker-setup-infra.outputs.instance_ip }}"
+
       - name: Install SSH Client
         run: sudo apt-get install -y openssh-client
 
@@ -88,13 +92,18 @@ jobs:
           set -x
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -lf ~/.ssh/id_rsa || echo "Key verification failed"
 
       - name: SSH into EC2 and Deploy Docker Image
+        env:
+          INSTANCE_IP: ${{ needs.build-docker-setup-infra.outputs.instance_ip }}
+          REPO_URI: ${{ secrets.ECR_REPOSITORY_URI }}
         run: |
           set -x
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ec2-user@${{ needs.build-docker-setup-infra.outputs.instance_ip }} << 'EOF'
+          # Adding timeout to SSH for connection issues
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ec2-user@${INSTANCE_IP} << EOF
           set -x
-          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
-          docker pull $REPOSITORY_URI:latest
-          docker run -d -p 80:80 $REPOSITORY_URI:latest
+          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${REPO_URI}
+          docker pull ${REPO_URI}:latest
+          docker run -d -p 80:80 ${REPO_URI}:latest
           EOF
