@@ -98,4 +98,9 @@ jobs:
           INSTANCE_IP: ${{ needs.build-docker-setup-infra.outputs.instance_ip }}
           REPO_URI: ${{ secrets.ECR_REPOSITORY_URI }}
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ec2-user@${INSTANCE_IP} "aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${REPO_URI} && docker pull ${REPO_URI}:latest && docker run -d -p 80:80 ${REPO_URI}:latest"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ec2-user@${INSTANCE_IP} "
+          sudo systemctl start docker &&
+          sudo systemctl enable docker &&
+          aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin ${REPO_URI} &&
+          sudo docker pull ${REPO_URI}:latest &&
+          sudo docker run -d -p 80:80 ${REPO_URI}:latest"
