@@ -89,7 +89,6 @@ jobs:
 
       - name: Add SSH Key
         run: |
-          set -x
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keygen -lf ~/.ssh/id_rsa || echo "Key verification failed"
@@ -99,11 +98,4 @@ jobs:
           INSTANCE_IP: ${{ needs.build-docker-setup-infra.outputs.instance_ip }}
           REPO_URI: ${{ secrets.ECR_REPOSITORY_URI }}
         run: |
-          set -x
-          # Adding timeout to SSH for connection issues
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ec2-user@${INSTANCE_IP} << EOF
-          set -x
-          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${REPO_URI}
-          docker pull ${REPO_URI}:latest
-          docker run -d -p 80:80 ${REPO_URI}:latest
-          EOF
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ec2-user@${INSTANCE_IP} "aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${REPO_URI} && docker pull ${REPO_URI}:latest && docker run -d -p 80:80 ${REPO_URI}:latest"
