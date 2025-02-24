@@ -30,7 +30,7 @@ class NginxCicdStack(Stack):
         
         # Add ECR policy to the role
         instance_role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonECR-FullAccess")
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonEC2ContainerRegistryFullAccess")
         )
         
         # Define the EC2 instance with the custom role
