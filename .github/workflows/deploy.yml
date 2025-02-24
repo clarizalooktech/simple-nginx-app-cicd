@@ -79,7 +79,7 @@ jobs:
 
     steps:
       - name: Debug Output IP
-        run: echo "Using IP address: ${{ needs.build-docker-setup-infra.outputs.instance_ip }}"
+        run: 'echo "Using IP address: ${{ needs.build-docker-setup-infra.outputs.instance_ip }}"'
 
       - name: Install SSH Client
         run: sudo apt-get install -y openssh-client
