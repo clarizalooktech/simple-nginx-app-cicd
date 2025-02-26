@@ -16,9 +16,9 @@ This is a simple web application served by an Nginx server.
 3.  Access application
 
     [http://localhost:8080](http://localhost:8080)
-    
+
 
 ### Screenshots
-![Build Docker setup1](assets/build-docker-setup-infra-step1.jpg)
+![Build Docker setup1](https://github.com/clarizalooktech/simple-nginx-app-cicd/blob/feature/build-cicd-pipeline/assets/build-docker-setup-infra-step1.JPG)
 
-![Build Docker setup2](assets/build-docker-setup-infra-step2.jpg)
+![Build Docker setup2](https://github.com/clarizalooktech/simple-nginx-app-cicd/blob/feature/build-cicd-pipeline/assets/build-docker-setup-infra-step2.JPG)
