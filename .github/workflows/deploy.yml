@@ -3,7 +3,7 @@ name: Deploy Nginx App
 on:
   push:
     branches:
-      - feature/build-cicd-pipeline
+      - main
 
 jobs:
   build-docker-setup-infra:
