@@ -59,7 +59,7 @@ jobs:
         id: wait-for-instance
         run: |
           # Get the instance ID from CDK outputs if possible
-          STACK_OUTPUTS=$(aws cloudformation describe-stacks --stack-name NginxCicdStack --query "Stacks[0].Outputs" --output json)
+          STACK_OUTPUTS=$(aws cloudformation describe-stacks --stack-name nginx-cicd-stack --query "Stacks[0].Outputs" --output json)
           INSTANCE_ID=$(echo $STACK_OUTPUTS | jq -r '.[] | select(.OutputKey=="InstanceId") | .OutputValue')
           INSTANCE_IP=$(echo $STACK_OUTPUTS | jq -r '.[] | select(.OutputKey=="InstancePublicIp") | .OutputValue')
 
