@@ -52,10 +52,26 @@ class NginxCicdStack(Stack):
         CfnOutput(self, "InstanceId", value=ec2_instance.instance_id)
         CfnOutput(self, "InstancePublicIp", value=ec2_instance.instance_public_ip)
 
-        ec2_instance.add_user_data(
-            "yum update -y",
-            "amazon-linux-extras install docker -y",
-            "service docker start",
-            "usermod -a -G docker ec2-user",
-            "systemctl enable docker"
-        )
+    def _get_user_data(self):
+        return """#!/bin/bash
+# Update system packages
+yum update -y
+
+# Install Docker
+amazon-linux-extras install docker -y
+systemctl start docker
+systemctl enable docker
+usermod -a -G docker ec2-user
+
+# Install AWS CLI v2 if needed
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
+./aws/install --update
+rm -rf aws awscliv2.zip
+
+# Create a status file to signal instance is ready
+touch /tmp/instance_ready
+
+# Log completion
+echo "Instance setup complete"
+"""
