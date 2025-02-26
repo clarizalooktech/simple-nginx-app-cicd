@@ -58,12 +58,52 @@ jobs:
       - name: Wait for EC2 Instance to be Ready
         id: wait-for-instance
         run: |
-          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=NginxInstance" --query "Reservations[0].Instances[0].InstanceId" --output text)
+          # Get the instance ID from CDK outputs if possible
+          STACK_OUTPUTS=$(aws cloudformation describe-stacks --stack-name NginxCicdStack --query "Stacks[0].Outputs" --output json)
+          INSTANCE_ID=$(echo $STACK_OUTPUTS | jq -r '.[] | select(.OutputKey=="InstanceId") | .OutputValue')
+          INSTANCE_IP=$(echo $STACK_OUTPUTS | jq -r '.[] | select(.OutputKey=="InstancePublicIp") | .OutputValue')
+
+          # Fallback to searching by tag if outputs aren't available
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" == "null" ]; then
+            echo "Looking up instance by tag..."
+            INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=NginxInstance" "Name=instance-state-name,Values=pending,running" --query "Reservations[0].Instances[0].InstanceId" --output text)
+
+            if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" == "None" ]; then
+              echo "Error: No running EC2 instance with tag 'NginxInstance' found."
+              exit 1
+            fi
+
+            INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          fi
+
+          echo "Found instance $INSTANCE_ID with IP $INSTANCE_IP"
+
+          # Wait for the instance to be running
+          echo "Waiting for instance to be in running state..."
           aws ec2 wait instance-running --instance-ids $INSTANCE_ID
-          INSTANCE_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+
+          # Wait for status checks to pass
           echo "Waiting for instance status checks to pass..."
           aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
-          sleep 30
+
+          # Extra verification of SSH availability
+          echo "Verifying SSH connectivity..."
+          counter=0
+          max_attempts=10
+          while [ $counter -lt $max_attempts ]; do
+            if nc -z -w5 $INSTANCE_IP 22; then
+              echo "SSH port is open!"
+              break
+            fi
+            echo "Waiting for SSH port to open... (attempt $((counter+1))/$max_attempts)"
+            sleep 10
+            counter=$((counter+1))
+          done
+
+          if [ $counter -eq $max_attempts ]; then
+            echo "Warning: Could not verify SSH connectivity after $max_attempts attempts"
+          fi
+
           echo "Instance ID: $INSTANCE_ID"
           echo "Instance IP: $INSTANCE_IP"
           echo "instance_ip=$INSTANCE_IP" >> $GITHUB_OUTPUT
