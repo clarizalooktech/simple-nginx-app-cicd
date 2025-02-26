@@ -54,10 +54,10 @@ Refers to `infrastructure_stack.py`. This script performs the following actions:
 
 ## Deployment Process
 
-a. Build Docker Image: Build the Docker image using the Dockerfile.
-b. Push to ECR: Tag and push the Docker image to Amazon ECR.
-c. Provision EC2 Instance: Launch an EC2 instance with the provided user data script.
-d. SSH and Docker Run: SSH into the EC2 instance, log into ECR, and run the Docker image.
+1. Build Docker Image: Build the Docker image using the Dockerfile.
+2. Push to ECR: Tag and push the Docker image to Amazon ECR.
+3. Provision EC2 Instance: Launch an EC2 instance with the provided user data script.
+4. SSH and Docker Run: SSH into the EC2 instance, log into ECR, and run the Docker image.
 
 ## How to Run Locally
 
