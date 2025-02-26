@@ -13,7 +13,7 @@ jobs:
 
     env:
       REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }} 
+      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
       CDK_DEFAULT_REGION: ap-southeast-2
 
     steps:
