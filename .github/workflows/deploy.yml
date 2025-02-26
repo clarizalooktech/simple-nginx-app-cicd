@@ -137,8 +137,23 @@ jobs:
           REPO_URI: ${{ secrets.ECR_REPOSITORY_URI }}
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ec2-user@${INSTANCE_IP} "
-          sudo systemctl start docker &&
-          sudo systemctl enable docker &&
-          aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin ${REPO_URI} &&
-          sudo docker pull ${REPO_URI}:latest &&
-          sudo docker run -d -p 80:80 ${REPO_URI}:latest"
+            # Check what's using port 80
+            echo 'Checking what process is using port 80...'
+            sudo lsof -i :80 || echo 'No process found by lsof'
+
+            # Stop Nginx if it's running
+            sudo systemctl stop nginx || echo 'Nginx not running or not installed'
+
+            # Kill any process using port 80
+            sudo fuser -k 80/tcp || echo 'No process killed'
+
+            # Stop any running Docker containers using port 80
+            sudo docker ps -q --filter publish=80 | xargs -r sudo docker stop
+            sudo docker ps -q --filter publish=80 | xargs -r sudo docker rm
+
+            # Start Docker and proceed with deployment
+            sudo systemctl start docker &&
+            sudo systemctl enable docker &&
+            aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin ${REPO_URI} &&
+            sudo docker pull ${REPO_URI}:latest &&
+            sudo docker run -d -p 80:80 ${REPO_URI}:latest"
