@@ -80,4 +80,4 @@ d. SSH and Docker Run: SSH into the EC2 instance, log into ECR, and run the Dock
 
 ![Build Docker setup in the AWS Console](https://github.com/clarizalooktech/simple-nginx-app-cicd/blob/feature/build-cicd-pipeline/assets/build-docker-setup-infra-step2.JPG)
 
-![Successful Deployment in Github Action](https://github.com/clarizalooktech/simple-nginx-app-cicd/blob/feature/build-cicd-pipeline/assets/build-docker-setup-infra-step3.JPG)
+![Successful Deployment in Github Action](https://github.com/clarizalooktech/simple-nginx-app-cicd/blob/main/assets/build-docker-setup-infra-step3.png)
